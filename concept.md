@@ -24,8 +24,10 @@ Aktueller PoC:
 - kompakte, responsive Veranstaltungsliste,
 - realistisch aufgebaute Demo-Veranstaltungen auf Basis öffentlich sichtbarer RC-Termine,
 - Volltextsuche,
-- Filter nach Kategorie und Land,
-- Filter auf Veranstaltungen mit offener Anmeldung,
+- Mehrfachfilter nach Altersgruppen (Kinder, Jugend 11–17, Junge Erwachsene 18–27, Erwachsene 28+, Familien),
+- Mehrfachfilter nach männlich/weiblich,
+- Orts-/PLZ-Suche mit einstellbarem Umkreis,
+- umschaltbare Listen- und schematische Kartenansicht,
 - sichtbarer Anmeldestatus,
 - Preis, Zielgruppe, Termin und Ort direkt in der Liste,
 - inline aufklappbare Veranstaltungsdetails,
@@ -36,9 +38,13 @@ Aktueller PoC:
 
 ## Veranstaltungsansicht
 
-Die Veranstaltungsliste ist bewusst deutlich kompakter als eine klassische Kartenansicht. Ziel ist, dass mehrere Veranstaltungen gleichzeitig sichtbar sind und ein schneller Überblick möglich ist.
+Die Veranstaltungsliste ist bewusst deutlich kompakter als eine klassische Kartenansicht. Ziel ist, dass mehrere Veranstaltungen gleichzeitig sichtbar sind und ein schneller Überblick möglich ist. Auf Mobile orientiert sich die Oberfläche an einer reduzierten, iOS-artigen Informationshierarchie mit großer Suche, horizontalen Schnellfiltern und einer kompakten Liste.
 
 Ein Klick auf eine Veranstaltung klappt Details direkt innerhalb der Gesamtliste auf. Die Liste bleibt damit als Kontext erhalten und kann weiter gescrollt werden.
+
+Die Nutzer können zwischen Liste und Karte wechseln. Die Karte ist im PoC bewusst nur schematisch: Sie zeigt Demo-Pins und eine kompakte Event-Vorschau, ohne Google Maps oder einen anderen Kartendienst einzubinden.
+
+Der Ortsfilter akzeptiert Ort oder PLZ. Für bekannte Demo-Orte wird ein Radius in Kilometern berechnet; für unbekannte Eingaben fällt der PoC auf eine Textsuche in Orts-/Adressdaten zurück. Der Radius ist frei zwischen 5 und 200 km einstellbar, ergänzt durch Schnellwerte 5/10/25/50/100 km.
 
 Die aufgeklappte Ansicht zeigt derzeit die verfügbaren Demo-Daten:
 
@@ -125,7 +131,8 @@ Der PoC orientiert sich an der Regnum-Christi-Markenwelt, ohne die bestehende We
 - Merriweather als kontrastierende Serifenschrift für Überschriften,
 - Regnum-Christi-Rot als sparsame Akzentfarbe,
 - überwiegend weiße und neutrale Flächen,
-- kompakte, funktionale Darstellung statt großer Marketing-Karten.
+- kompakte, funktionale Darstellung statt großer Marketing-Karten,
+- Mobile-first: wenige primäre Bedienelemente, Filter in einem Bottom Sheet, Liste/Karte als einfache Segment-Umschaltung.
 
 ## Backend-Zielbild
 
