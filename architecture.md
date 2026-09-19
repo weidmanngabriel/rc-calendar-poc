@@ -57,8 +57,9 @@ Das Payload-Modell enthält:
 
 - Veranstaltungsliste,
 - Volltextsuche,
-- Filter nach Kategorie und Land,
-- Filter auf offene Anmeldung,
+- Mehrfachfilter nach Altersgruppe und Geschlecht,
+- Orts-/PLZ-Filter mit Radius,
+- Listen-/Kartenumschaltung,
 - kompakte Event-Zeilen,
 - inline aufklappbare Detailansicht,
 - Deep-Link-Zustand über `?event=<id>`,
@@ -67,6 +68,8 @@ Das Payload-Modell enthält:
 - Erziehungsberechtigtenlogik,
 - Zusammenfassung und Fake-Erfolg,
 - leeren Ergebniszustand.
+
+Die Kartenansicht verwendet im PoC keine externe Kartenbibliothek. Event-Orte werden gegen einen kleinen lokalen Koordinatenkatalog gemappt und als Pins auf einer schematischen CSS-Karte dargestellt. Die Radiusberechnung nutzt die Haversine-Distanz im Browser. Das ist bewusst nur eine UX-/Funktionssimulation; für die produktive Version muss geklärt werden, ob Koordinaten aus dem Backend kommen und welcher Kartendienst verwendet wird.
 
 Es wird bewusst kein zusätzliches State-Management oder UI-Framework verwendet.
 
@@ -125,5 +128,5 @@ GitHub Pages verwendet GitHub Actions als Veröffentlichungsquelle.
 - API-Verträge nicht erfinden; bis zur Klärung Demo-Daten/Fake-Submit verwenden.
 - Alles im Browser als öffentlich einsehbar behandeln.
 - Keine Secrets oder privaten Zugangsdaten im Repository.
-- Mobile Nutzbarkeit hat denselben Stellenwert wie Desktop.
+- Mobile Nutzbarkeit ist für den öffentlichen Kalender der primäre Designfall; Desktop bleibt voll nutzbar.
 - Neue Libraries nur einführen, wenn sie einen klaren Produktnutzen haben.
