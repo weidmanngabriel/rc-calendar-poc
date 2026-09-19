@@ -1,49 +1,91 @@
 # Produktkonzept
 
-Diese Datei ist die fachliche Quelle für die App, die aus diesem Template entsteht. Beim Start eines neuen Projekts sollte sie früh mit dem tatsächlichen Produktkonzept gefüllt und danach laufend aktuell gehalten werden.
-
 ## Grundidee
 
-**Noch festzulegen.**
+Der RC Kalender PoC validiert ein neues, modernes Frontend für den bestehenden Veranstaltungskalender von Regnum Christi.
 
-Beschreibe hier in wenigen Absätzen:
+Das Backend existiert bereits und ist **nicht Teil dieses PoC**. Die Frontend-App soll später im Wesentlichen zwei Backend-Interaktionen haben:
 
-- welches Problem die App löst,
-- für wen sie gedacht ist,
-- welchen konkreten Nutzen sie bietet,
-- was die wichtigste Annahme hinter dem Produkt ist.
+1. veröffentlichte Veranstaltungen lesen,
+2. Anmeldungen an das bestehende Backend senden.
+
+Bis die reale Schnittstelle bekannt ist, verwendet der PoC lokale Demo-Daten mit derselben fachlichen Struktur.
 
 ## Zielgruppe
 
-**Noch festzulegen.**
+Menschen, die öffentliche Veranstaltungen von Regnum Christi finden, verstehen und sich dafür anmelden möchten.
+
+Der erste PoC konzentriert sich auf die öffentliche Nutzersicht. Interne Administration, Veranstaltungsanlage, Rechnungen und Datenpflege liegen außerhalb des Frontends.
 
 ## Kernfunktionen
 
-Noch keine produktspezifischen Funktionen definiert.
+Aktueller PoC:
 
-Als technische Ausgangsbasis vorhanden:
+- responsive Veranstaltungsliste,
+- realistisch aufgebaute Demo-Veranstaltungen auf Basis öffentlich sichtbarer RC-Termine,
+- Volltextsuche,
+- Filter nach Kategorie und Land,
+- optionaler Filter auf Veranstaltungen mit offener Anmeldung,
+- sichtbarer Anmeldestatus,
+- Preis, Zielgruppe, Termin und Ort direkt in der Liste,
+- installierbare PWA.
 
-- installierbare PWA,
-- responsive Startoberfläche,
-- optionaler Google Login,
-- mehrere lokal gespeicherte Google-Konten mit Accountwechsel,
-- automatisches Deployment über GitHub Pages.
+Nächste fachliche Schritte:
 
-Diese technischen Funktionen sind keine Vorgabe für das spätere Geschäftsmodell und dürfen angepasst oder entfernt werden.
+- Veranstaltungsdetailseite,
+- Anmeldeformular,
+- Anbindung an die bestehende Backend-Schnittstelle.
 
 ## Zentrale Abläufe
 
-**Noch festzulegen.**
+### Veranstaltungen finden
 
-Dokumentiere hier die wenigen wichtigsten Nutzerabläufe, sobald sie definiert sind.
+1. Nutzer öffnet den Kalender.
+2. Das Frontend lädt die Veranstaltungen.
+3. Nutzer sucht oder filtert.
+4. Die passenden Veranstaltungen werden als Karten dargestellt.
+5. Nutzer öffnet die Details einer Veranstaltung.
+
+Im aktuellen PoC kommen die Daten aus `src/data/events.ts`. Später wird diese Quelle durch das Backend ersetzt.
+
+### Anmeldung
+
+Zielbild:
+
+1. Nutzer öffnet eine Veranstaltung.
+2. Nutzer startet „Anmelden“.
+3. Frontend erfasst die vom Backend erwarteten Angaben.
+4. Frontend sendet die Anmeldung an das bestehende Backend.
+5. Backend liefert Ergebnis bzw. Fehler zurück.
+6. Frontend zeigt das Ergebnis verständlich an.
+
+Der konkrete Request-Vertrag ist noch nicht bekannt und wird daher im aktuellen PoC nicht vorgetäuscht.
 
 ## Abgrenzung
 
-Das Template enthält bewusst keine fachliche Datenbank, keine Rollenlogik, keine Zahlungsabwicklung und keine produktspezifischen Prozesse. Solche Funktionen werden erst ergänzt, wenn sie für das neue Produkt erforderlich sind.
+Nicht Bestandteil des PoC:
+
+- eigenes Backend,
+- Event-Administration,
+- Kontaktverwaltung,
+- Rechnungslogik,
+- Zahlungsabgleich,
+- Bestätigungsschreiben,
+- Synchronisation zwischen mehreren Backend-Systemen,
+- Nachbau historischer Dynamics-/Webdatenbank-Altlasten.
+
+Der PoC soll bewusst ein frisches Frontend für das bestehende Backend sein.
+
+## Demo-Daten
+
+Die Demo-Daten basieren auf öffentlich sichtbaren Veranstaltungen des bestehenden RC-Webkalenders, Stand 19.09.2026.
+
+Personenbezogene Kontaktinformationen wurden nicht übernommen. Kategorien und Kurzbeschreibungen dürfen für den PoC vereinfacht werden, solange die zugrunde liegenden Veranstaltungsdaten realistisch bleiben.
 
 ## Offene Annahmen
 
-- Welche Nutzergruppe soll zuerst validiert werden?
-- Welches Verhalten zeigt, dass das Produkt echten Nutzen bietet?
-- Welche Funktionen sind für einen ersten validierbaren Prototyp wirklich nötig?
-- Welche Funktionen können zunächst bewusst manuell oder außerhalb der App gelöst werden?
+- Wie sieht der tatsächliche API-Vertrag zum Lesen der Veranstaltungen aus?
+- Wie sieht der Request/Response-Vertrag für Anmeldungen aus?
+- Welche Felder sind für eine Anmeldung verpflichtend?
+- Welche Anmeldestatus liefert das Backend zurück?
+- Welche Filter sollen für den ersten echten Nutzertest sichtbar sein?
