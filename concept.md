@@ -9,7 +9,7 @@ Das Backend existiert bereits und ist **nicht Teil dieses PoC**. Die Frontend-Ap
 1. veröffentlichte Veranstaltungen lesen,
 2. Anmeldungen an das bestehende Backend senden.
 
-Bis die reale Schnittstelle bekannt ist, verwendet der PoC lokale Demo-Daten mit derselben fachlichen Struktur.
+Bis die reale Schnittstelle bekannt ist, verwendet der PoC lokale Demo-Daten und simuliert das erfolgreiche Absenden einer Anmeldung.
 
 ## Zielgruppe
 
@@ -21,45 +21,121 @@ Der erste PoC konzentriert sich auf die öffentliche Nutzersicht. Interne Admini
 
 Aktueller PoC:
 
-- responsive Veranstaltungsliste,
+- kompakte, responsive Veranstaltungsliste,
 - realistisch aufgebaute Demo-Veranstaltungen auf Basis öffentlich sichtbarer RC-Termine,
 - Volltextsuche,
 - Filter nach Kategorie und Land,
-- optionaler Filter auf Veranstaltungen mit offener Anmeldung,
+- Filter auf Veranstaltungen mit offener Anmeldung,
 - sichtbarer Anmeldestatus,
 - Preis, Zielgruppe, Termin und Ort direkt in der Liste,
+- inline aufklappbare Veranstaltungsdetails,
+- Deep Links auf aufgeklappte Veranstaltungen über den Query-Parameter `event`,
+- mehrstufiger Anmelde-Flow,
+- optionale lokale Speicherung bereits eingegebener Personen,
 - installierbare PWA.
 
-Nächste fachliche Schritte:
+## Veranstaltungsansicht
 
-- Veranstaltungsdetailseite,
-- Anmeldeformular,
-- Anbindung an die bestehende Backend-Schnittstelle.
+Die Veranstaltungsliste ist bewusst deutlich kompakter als eine klassische Kartenansicht. Ziel ist, dass mehrere Veranstaltungen gleichzeitig sichtbar sind und ein schneller Überblick möglich ist.
 
-## Zentrale Abläufe
+Ein Klick auf eine Veranstaltung klappt Details direkt innerhalb der Gesamtliste auf. Die Liste bleibt damit als Kontext erhalten und kann weiter gescrollt werden.
 
-### Veranstaltungen finden
+Die aufgeklappte Ansicht zeigt derzeit die verfügbaren Demo-Daten:
 
-1. Nutzer öffnet den Kalender.
-2. Das Frontend lädt die Veranstaltungen.
-3. Nutzer sucht oder filtert.
-4. Die passenden Veranstaltungen werden als Karten dargestellt.
-5. Nutzer öffnet die Details einer Veranstaltung.
+- Beschreibung,
+- Termin und Uhrzeit,
+- Veranstaltungsort,
+- Zielgruppen,
+- Preis,
+- Anmeldestatus.
 
-Im aktuellen PoC kommen die Daten aus `src/data/events.ts`. Später wird diese Quelle durch das Backend ersetzt.
+## Anmelde-Flow
 
-### Anmeldung
+### 1. Teilnehmer auswählen
 
-Zielbild:
+Der Nutzer legt fest:
 
-1. Nutzer öffnet eine Veranstaltung.
-2. Nutzer startet „Anmelden“.
-3. Frontend erfasst die vom Backend erwarteten Angaben.
-4. Frontend sendet die Anmeldung an das bestehende Backend.
-5. Backend liefert Ergebnis bzw. Fehler zurück.
-6. Frontend zeigt das Ergebnis verständlich an.
+- Anzahl Erwachsene,
+- Anzahl Kinder / Minderjährige.
 
-Der konkrete Request-Vertrag ist noch nicht bekannt und wird daher im aktuellen PoC nicht vorgetäuscht.
+Eine minderjährige Person ist fachlich ein Kind. Maßgeblich ist das Alter zum Beginn der Veranstaltung.
+
+Es dürfen mehrere Erwachsene und mehrere Kinder angemeldet werden. Eine Anmeldung darf auch ausschließlich Kinder enthalten.
+
+Wenn Kinder angemeldet werden, muss ein Erziehungsberechtigter angegeben sein. Dieser kann:
+
+- selbst als Erwachsener an der Veranstaltung teilnehmen oder
+- nur als Erziehungsberechtigter hinterlegt werden, ohne Teilnehmer zu sein.
+
+### 2. Personendaten
+
+Für erwachsene Teilnehmer und einen separat erfassten Erziehungsberechtigten werden aktuell folgende Pflichtfelder erfasst:
+
+- Vorname,
+- Nachname,
+- Geburtsdatum,
+- E-Mail,
+- Straße und Hausnummer,
+- PLZ,
+- Ort,
+- Land.
+
+Für Kinder / Minderjährige:
+
+- Vorname,
+- Nachname,
+- Geburtsdatum,
+- E-Mail.
+
+Für Kinder wird standardmäßig die E-Mail des Erziehungsberechtigten übernommen. Über „Andere E-Mail-Adresse verwenden“ kann stattdessen eine eigene Adresse eingegeben werden.
+
+Die Adressfelder sind bewusst international gehalten. Der PoC unterstützt insbesondere Deutschland, Österreich, Schweiz, Italien und Luxemburg und erzwingt keine deutsche PLZ-Struktur.
+
+### 3. Datenschutz und lokale Speicherung
+
+Die Datenschutzzustimmung ist für die Anmeldung erforderlich.
+
+Optional können eingegebene Personendaten auf dem Gerät gespeichert werden. Im PoC erfolgt dies ausschließlich lokal im Browser über `localStorage`.
+
+Bei späteren Anmeldungen können gespeicherte Personen über ein Dropdown ausgewählt und deren Felder vorbefüllt werden.
+
+Die historische Borlabs-Cookie-Integration wird im PoC nicht nachgebaut. Ob und wie eine Einwilligung zur lokalen Speicherung im Produktivsystem umgesetzt werden muss, wird später separat entschieden.
+
+### 4. Prüfung und Absenden
+
+Vor dem endgültigen Absenden zeigt der PoC eine Zusammenfassung:
+
+- Veranstaltung,
+- Erwachsene,
+- Kinder,
+- Erziehungsberechtigter,
+- Kontaktdaten.
+
+Der Button „Anmeldung absenden“ ruft aktuell nur eine lokale Service-Abstraktion auf und simuliert eine erfolgreiche Backend-Antwort.
+
+### 5. Bestätigung
+
+Nach erfolgreichem Fake-Submit erscheint eine Bestätigungsseite mit dem Hinweis, dass im späteren Produkt eine Bestätigungs-E-Mail folgt. Von dort geht es zurück zum Kalender.
+
+## Visuelle Orientierung
+
+Der PoC orientiert sich an der Regnum-Christi-Markenwelt, ohne die bestehende Webseite 1:1 zu kopieren:
+
+- Lato als primäre UI-Schrift,
+- Merriweather als kontrastierende Serifenschrift für Überschriften,
+- Regnum-Christi-Rot als sparsame Akzentfarbe,
+- überwiegend weiße und neutrale Flächen,
+- kompakte, funktionale Darstellung statt großer Marketing-Karten.
+
+## Backend-Zielbild
+
+Der konkrete Backend-Vertrag ist noch offen. Das aktuelle Altsystem verwendet möglicherweise SOAP/OData oder eine andere bestehende Schnittstelle; für den PoC wird hierzu keine Annahme fest codiert.
+
+Das Frontend ruft stattdessen eine kleine interne Funktion auf:
+
+`submitRegistration(registration)`
+
+Später kann diese Implementierung auf einen bestehenden oder neuen API-Endpunkt zeigen, ohne den UI-Flow neu zu bauen.
 
 ## Abgrenzung
 
@@ -72,9 +148,8 @@ Nicht Bestandteil des PoC:
 - Zahlungsabgleich,
 - Bestätigungsschreiben,
 - Synchronisation zwischen mehreren Backend-Systemen,
-- Nachbau historischer Dynamics-/Webdatenbank-Altlasten.
-
-Der PoC soll bewusst ein frisches Frontend für das bestehende Backend sein.
+- Nachbau historischer Dynamics-/Webdatenbank-Altlasten,
+- produktive Cookie-/Consent-Integration.
 
 ## Demo-Daten
 
@@ -86,6 +161,6 @@ Personenbezogene Kontaktinformationen wurden nicht übernommen. Kategorien und K
 
 - Wie sieht der tatsächliche API-Vertrag zum Lesen der Veranstaltungen aus?
 - Wie sieht der Request/Response-Vertrag für Anmeldungen aus?
-- Welche Felder sind für eine Anmeldung verpflichtend?
-- Welche Anmeldestatus liefert das Backend zurück?
-- Welche Filter sollen für den ersten echten Nutzertest sichtbar sein?
+- Welche Backend-Fehler und Statuswerte müssen im Frontend behandelt werden?
+- Welche der aktuell im Altsystem sichtbaren längeren Veranstaltungsinhalte stehen über das Backend zur Verfügung?
+- Wie soll die lokale Personenspeicherung datenschutzrechtlich im Produktivsystem umgesetzt werden?
