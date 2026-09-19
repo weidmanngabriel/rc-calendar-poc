@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { dummyEvents, type CalendarEvent, type RegistrationStatus } from './data/events'
 import { submitRegistration, type RegistrationPayload } from './registration'
 
