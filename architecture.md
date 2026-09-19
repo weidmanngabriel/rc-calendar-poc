@@ -65,7 +65,7 @@ Das Payload-Modell enthält:
 - Deep-Link-Zustand über `?event=<id>`,
 - mehrstufigen Anmelde-Flow,
 - dynamische Formulare für Erwachsene und Kinder,
-- Erziehungsberechtigtenlogik,
+- Erziehungsberechtigtenlogik mit konkreter Personenzuordnung erst im Dateneingabe-Schritt,
 - Zusammenfassung und Fake-Erfolg,
 - leeren Ergebniszustand.
 
@@ -75,7 +75,7 @@ Es wird bewusst kein zusätzliches State-Management oder UI-Framework verwendet.
 
 ## Lokale Personenspeicherung
 
-Optional können Personendaten für spätere Anmeldungen lokal im Browser gespeichert werden.
+Optional können Personendaten nach erfolgreichem Absenden auf dem Danke-Screen für spätere Anmeldungen lokal im Browser gespeichert werden.
 
 Technisch nutzt der PoC:
 

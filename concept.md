@@ -38,7 +38,7 @@ Aktueller PoC:
 
 ## Veranstaltungsansicht
 
-Die Veranstaltungsliste ist bewusst deutlich kompakter als eine klassische Kartenansicht. Ziel ist, dass mehrere Veranstaltungen gleichzeitig sichtbar sind und ein schneller Überblick möglich ist. Auf Mobile orientiert sich die Oberfläche an einer reduzierten, iOS-artigen Informationshierarchie mit großer Suche, horizontalen Schnellfiltern und einer kompakten Liste.
+Die Veranstaltungsliste ist bewusst deutlich kompakter als eine klassische Kartenansicht. Ziel ist, dass mehrere Veranstaltungen gleichzeitig sichtbar sind und ein schneller Überblick möglich ist. Auf Mobile orientiert sich die Oberfläche an einer reduzierten, iOS-artigen Informationshierarchie mit großer Suche, horizontalen Schnellfiltern und einer kompakten Liste. Jede Veranstaltung zeigt links ein Vorschaubild, daneben einen klaren Datumsblock und rechts Titel, Ort, Zielgruppe, Preis und Status.
 
 Ein Klick auf eine Veranstaltung klappt Details direkt innerhalb der Gesamtliste auf. Die Liste bleibt damit als Kontext erhalten und kann weiter gescrollt werden.
 
@@ -68,10 +68,7 @@ Eine minderjährige Person ist fachlich ein Kind. Maßgeblich ist das Alter zum 
 
 Es dürfen mehrere Erwachsene und mehrere Kinder angemeldet werden. Eine Anmeldung darf auch ausschließlich Kinder enthalten.
 
-Wenn Kinder angemeldet werden, muss ein Erziehungsberechtigter angegeben sein. Dieser kann:
-
-- selbst als Erwachsener an der Veranstaltung teilnehmen oder
-- nur als Erziehungsberechtigter hinterlegt werden, ohne Teilnehmer zu sein.
+Wenn Kinder angemeldet werden, muss ein Erziehungsberechtigter angegeben sein. Im ersten Schritt wird nur festgelegt, ob der Erziehungsberechtigte selbst als Erwachsener teilnimmt oder separat hinterlegt wird. Welche konkrete erwachsene Person erziehungsberechtigt ist, wird erst bei der Eingabe der Personendaten markiert.
 
 ### 2. Personendaten
 
@@ -101,7 +98,7 @@ Die Adressfelder sind bewusst international gehalten. Der PoC unterstützt insbe
 
 Die Datenschutzzustimmung ist für die Anmeldung erforderlich.
 
-Optional können eingegebene Personendaten auf dem Gerät gespeichert werden. Im PoC erfolgt dies ausschließlich lokal im Browser über `localStorage`.
+Optional können eingegebene Personendaten **nach erfolgreichem Absenden** auf dem Danke-Screen auf dem Gerät gespeichert werden. Im PoC erfolgt dies ausschließlich lokal im Browser über `localStorage`.
 
 Bei späteren Anmeldungen können gespeicherte Personen über ein Dropdown ausgewählt und deren Felder vorbefüllt werden.
 

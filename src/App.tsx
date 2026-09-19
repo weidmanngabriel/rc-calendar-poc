@@ -33,10 +33,9 @@ type RegistrationDraft = {
   adults: PersonData[]
   children: ChildData[]
   guardianSource: 'adult' | 'separate'
-  guardianAdultIndex: number
+  guardianAdultId: string | null
   guardian: PersonData
   privacyAccepted: boolean
-  rememberPeople: boolean
 }
 
 type RegistrationStep = 'participants' | 'details' | 'review' | 'success'
@@ -76,6 +75,37 @@ function formatPrice(price: number) {
     currency: 'EUR',
     maximumFractionDigits: 0,
   }).format(price)
+}
+
+function formatEventDateTile(event: CalendarEvent) {
+  const start = new Date(`${event.startDate}T12:00:00`)
+  const end = new Date(`${event.endDate}T12:00:00`)
+  const month = new Intl.DateTimeFormat('de-DE', { month: 'short' }).format(start).replace('.', '').toUpperCase()
+  const day = new Intl.DateTimeFormat('de-DE', { day: '2-digit' }).format(start)
+  const weekday = new Intl.DateTimeFormat('de-DE', { weekday: 'short' }).format(start).replace('.', '').toUpperCase()
+  const endWeekday = new Intl.DateTimeFormat('de-DE', { weekday: 'short' }).format(end).replace('.', '').toUpperCase()
+  return {
+    month,
+    day,
+    span: event.startDate === event.endDate ? weekday : `${weekday} – ${endWeekday}`,
+  }
+}
+
+function getEventImage(event: CalendarEvent) {
+  const title = event.title.toLocaleLowerCase('de-DE')
+  if (title.includes('blessed') || event.city.includes('Berlin')) {
+    return 'https://images.unsplash.com/photo-1560969184-10fe8719e047?auto=format&fit=crop&w=500&q=80'
+  }
+  if (title.includes('net') || event.category === 'Kinder') {
+    return 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?auto=format&fit=crop&w=500&q=80'
+  }
+  if (event.category === 'Paare' || event.targetGroups.some((group) => group.toLocaleLowerCase('de-DE').includes('famil'))) {
+    return 'https://images.unsplash.com/photo-1475503572774-15a45e5d60b9?auto=format&fit=crop&w=500&q=80'
+  }
+  if (event.category === 'Spiritualität') {
+    return 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=500&q=80'
+  }
+  return 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=500&q=80'
 }
 
 function ageAtDate(birthDate: string, referenceDate: string) {
@@ -167,17 +197,24 @@ function EventRow({
   onToggle: () => void
   onRegister: () => void
 }) {
+  const dateTile = formatEventDateTile(event)
+
   return (
     <article className={`event-row${expanded ? ' is-expanded' : ''}`} id={`event-${event.id}`}>
       <button className="event-row-main" type="button" onClick={onToggle} aria-expanded={expanded}>
-        <span className="event-date-compact">{formatDate(event)}</span>
+        <img className="event-thumb" src={getEventImage(event)} alt="" loading="lazy" />
+        <span className="event-date-tile">
+          <small>{dateTile.month}</small>
+          <strong>{dateTile.day}</strong>
+          <small>{dateTile.span}</small>
+        </span>
         <span className="event-title-group">
           <strong>{event.title}</strong>
-          <small>{event.city} · {event.targetGroups.join(' · ')}</small>
+          <small className="event-location">⌖ {event.city}</small>
+          <small className="event-audience">♙ {event.targetGroups.join(' · ')} <span>· {formatPrice(event.price)}</span></small>
         </span>
-        <span className="event-price">{formatPrice(event.price)}</span>
         <span className={`status-badge status-${event.registrationStatus}`}>{statusLabels[event.registrationStatus]}</span>
-        <span className="expand-icon" aria-hidden="true">{expanded ? '−' : '+'}</span>
+        <span className="expand-icon" aria-hidden="true">›</span>
       </button>
 
       {expanded && (
@@ -333,14 +370,14 @@ function RegistrationFlow({
   const [savedPeople, setSavedPeople] = useState<SavedPerson[]>(() => loadSavedPeople())
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [saveCompleted, setSaveCompleted] = useState(false)
   const [draft, setDraft] = useState<RegistrationDraft>({
     adults: [emptyPerson()],
     children: [],
     guardianSource: 'adult',
-    guardianAdultIndex: 0,
+    guardianAdultId: null,
     guardian: emptyPerson(),
     privacyAccepted: false,
-    rememberPeople: false,
   })
 
   const setCounts = (nextAdults: number, nextChildren: number) => {
@@ -351,12 +388,15 @@ function RegistrationFlow({
       adults: resizePeople(current.adults, nextAdults, emptyPerson),
       children: resizePeople(current.children, nextChildren, emptyChild),
       guardianSource: nextChildren > 0 && nextAdults === 0 ? 'separate' : current.guardianSource,
-      guardianAdultIndex: Math.min(current.guardianAdultIndex, Math.max(0, nextAdults - 1)),
+      guardianAdultId: current.guardianAdultId && current.adults.slice(0, nextAdults).some((adult) => adult.id === current.guardianAdultId)
+        ? current.guardianAdultId
+        : null,
     }))
   }
 
+  const guardianAdult = draft.adults.find((adult) => adult.id === draft.guardianAdultId)
   const guardianEmail = draft.guardianSource === 'adult'
-    ? draft.adults[draft.guardianAdultIndex]?.email ?? ''
+    ? guardianAdult?.email ?? ''
     : draft.guardian.email
 
   const validateAges = () => {
@@ -392,6 +432,10 @@ function RegistrationFlow({
       setError(ageError)
       return
     }
+    if (draft.children.length > 0 && draft.guardianSource === 'adult' && !draft.guardianAdultId) {
+      setError('Bitte markiere bei den Personendaten, welcher angemeldete Erwachsene erziehungsberechtigt ist.')
+      return
+    }
     if (!draft.privacyAccepted) {
       setError('Bitte die Datenschutzhinweise bestätigen.')
       return
@@ -413,7 +457,7 @@ function RegistrationFlow({
       })),
       guardian: draft.children.length
         ? draft.guardianSource === 'adult'
-          ? draft.adults[draft.guardianAdultIndex]
+          ? guardianAdult ?? null
           : draft.guardian
         : null,
       privacyAccepted: draft.privacyAccepted,
@@ -421,19 +465,6 @@ function RegistrationFlow({
 
     try {
       await submitRegistration(payload)
-      if (draft.rememberPeople) {
-        const peopleToSave: SavedPerson[] = [
-          ...draft.adults.map(({ id: _id, ...person }) => person),
-          ...(draft.guardianSource === 'separate' && draft.children.length ? [draft.guardian] : [])
-            .map(({ id: _id, ...person }) => person),
-          ...draft.children.map(({ id: _id, useDifferentEmail: _useDifferentEmail, ...person }) => ({
-            ...person,
-            email: person.email || guardianEmail,
-          })),
-        ]
-        savePeople([...savedPeople, ...peopleToSave])
-        setSavedPeople(loadSavedPeople())
-      }
       setStep('success')
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch {
@@ -486,19 +517,8 @@ function RegistrationFlow({
                     checked={draft.guardianSource === 'adult'}
                     onChange={() => setDraft((current) => ({ ...current, guardianSource: 'adult' }))}
                   />
-                  <span>Ein angemeldeter Erwachsener ist erziehungsberechtigt</span>
+                  <span>Ein angemeldeter Erwachsener ist erziehungsberechtigt <small>Die konkrete Person wählst du im nächsten Schritt.</small></span>
                 </label>
-                {draft.guardianSource === 'adult' && (
-                  <label className="inline-select">
-                    <span>Welcher Erwachsene?</span>
-                    <select
-                      value={draft.guardianAdultIndex}
-                      onChange={(e) => setDraft((current) => ({ ...current, guardianAdultIndex: Number(e.target.value) }))}
-                    >
-                      {draft.adults.map((_, index) => <option key={index} value={index}>Erwachsener {index + 1}</option>)}
-                    </select>
-                  </label>
-                )}
                 <label className="radio-card">
                   <input
                     type="radio"
@@ -535,6 +555,20 @@ function RegistrationFlow({
                     adults: current.adults.map((item, itemIndex) => itemIndex === index ? person : item),
                   }))}
                 />
+                {draft.children.length > 0 && draft.guardianSource === 'adult' && (
+                  <label className={`guardian-person-choice${draft.guardianAdultId === adult.id ? ' is-selected' : ''}`}>
+                    <input
+                      type="radio"
+                      name="guardian-adult"
+                      checked={draft.guardianAdultId === adult.id}
+                      onChange={() => setDraft((current) => ({ ...current, guardianAdultId: adult.id }))}
+                    />
+                    <span>
+                      <strong>Diese Person ist erziehungsberechtigt</strong>
+                      <small>Die E-Mail dieser Person wird für Kinder standardmäßig übernommen.</small>
+                    </span>
+                  </label>
+                )}
               </fieldset>
             ))}
 
@@ -620,14 +654,6 @@ function RegistrationFlow({
                 />
                 <span>Ich bestätige die Datenschutzhinweise und stimme der Verarbeitung der angegebenen Daten für diese Anmeldung zu.</span>
               </label>
-              <label className="check-field">
-                <input
-                  type="checkbox"
-                  checked={draft.rememberPeople}
-                  onChange={(e) => setDraft((current) => ({ ...current, rememberPeople: e.target.checked }))}
-                />
-                <span>Personendaten auf diesem Gerät für spätere Anmeldungen speichern (PoC: lokal im Browser).</span>
-              </label>
             </div>
 
             {error && <p className="form-error">{error}</p>}
@@ -654,7 +680,10 @@ function RegistrationFlow({
                 <div key={adult.id}>
                   <span>Erwachsener {index + 1}</span>
                   <strong>{adult.firstName} {adult.lastName}</strong>
-                  <small>{adult.email} · {adult.street}, {adult.postalCode} {adult.city}, {adult.country}</small>
+                  <small>
+                    {adult.email} · {adult.street}, {adult.postalCode} {adult.city}, {adult.country}
+                    {draft.children.length > 0 && draft.guardianAdultId === adult.id ? ' · Erziehungsberechtigt' : ''}
+                  </small>
                 </div>
               ))}
               {draft.children.map((child, index) => (
@@ -687,9 +716,39 @@ function RegistrationFlow({
           <div className="success-state">
             <span className="success-icon">✓</span>
             <p className="eyebrow">ANMELDUNG GESENDET</p>
-            <h2>Danke für deine Anmeldung.</h2>
-            <p>Der PoC simuliert eine erfolgreiche Annahme durch das Backend. Im echten System folgt hier die Bestätigungs-E-Mail.</p>
-            <button type="button" className="primary-button" onClick={onClose}>Zurück zum Kalender</button>
+            <h2>Vielen Dank!</h2>
+            <p>Deine Anmeldung wurde erfolgreich übermittelt. Im echten System erhältst du in Kürze eine Bestätigungs-E-Mail mit allen Details.</p>
+
+            <div className="success-save-card">
+              <div>
+                <strong>Daten für zukünftige Anmeldungen speichern</strong>
+                <small>Die eingegebenen Personendaten bleiben nur auf diesem Gerät gespeichert.</small>
+              </div>
+              <button
+                type="button"
+                className={`save-data-toggle${saveCompleted ? ' is-saved' : ''}`}
+                aria-pressed={saveCompleted}
+                onClick={() => {
+                  if (saveCompleted) return
+                  const peopleToSave: SavedPerson[] = [
+                    ...draft.adults.map(({ id: _id, ...person }) => person),
+                    ...(draft.guardianSource === 'separate' && draft.children.length ? [draft.guardian] : [])
+                      .map(({ id: _id, ...person }) => person),
+                    ...draft.children.map(({ id: _id, useDifferentEmail: _useDifferentEmail, ...person }) => ({
+                      ...person,
+                      email: person.email || guardianEmail,
+                    })),
+                  ]
+                  savePeople([...savedPeople, ...peopleToSave])
+                  setSavedPeople(loadSavedPeople())
+                  setSaveCompleted(true)
+                }}
+              >
+                {saveCompleted ? 'Gespeichert' : 'Speichern'}
+              </button>
+            </div>
+
+            <button type="button" className="primary-button success-back-button" onClick={onClose}>Zurück zum Kalender</button>
           </div>
         )}
       </section>
