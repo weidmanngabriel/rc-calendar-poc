@@ -697,11 +697,128 @@ function RegistrationFlow({
   )
 }
 
+type AgeFilter = 'children' | 'youth' | 'youngAdults' | 'adults' | 'families'
+type GenderFilter = 'male' | 'female'
+type ViewMode = 'list' | 'map'
+
+const ageFilterOptions: Array<{ id: AgeFilter; label: string; range: string }> = [
+  { id: 'children', label: 'Kinder', range: 'bis 10' },
+  { id: 'youth', label: 'Jugend', range: '11–17' },
+  { id: 'youngAdults', label: 'Junge Erwachsene', range: '18–27' },
+  { id: 'adults', label: 'Erwachsene', range: '28+' },
+  { id: 'families', label: 'Familien', range: '' },
+]
+
+const placeCatalog = [
+  { name: 'München', lat: 48.137, lng: 11.575 },
+  { name: 'Altötting', lat: 48.226, lng: 12.676 },
+  { name: 'Neuötting-Alzgern', lat: 48.241, lng: 12.705 },
+  { name: 'Aschau im Chiemgau', lat: 47.777, lng: 12.323 },
+  { name: 'Ratingen', lat: 51.297, lng: 6.849 },
+  { name: 'Düsseldorf', lat: 51.227, lng: 6.774 },
+  { name: 'Köln', lat: 50.938, lng: 6.960 },
+  { name: 'Berlin', lat: 52.520, lng: 13.405 },
+  { name: 'Würzburg', lat: 49.791, lng: 9.954 },
+  { name: 'Königstein im Taunus', lat: 50.179, lng: 8.466 },
+  { name: 'Spital am Pyhrn', lat: 47.665, lng: 14.341 },
+  { name: 'Rittershausen', lat: 50.723, lng: 8.275 },
+]
+
+function getEventCoordinates(event: CalendarEvent) {
+  const city = event.city.toLocaleLowerCase('de-DE')
+  return placeCatalog.find((place) => city.includes(place.name.toLocaleLowerCase('de-DE')))
+}
+
+function getTargetMeta(event: CalendarEvent) {
+  const target = event.targetGroups.join(' ').toLocaleLowerCase('de-DE')
+  const ages = new Set<AgeFilter>()
+  if (/kinder|mädchen \(0|jungen \(0/.test(target)) ages.add('children')
+  if (/jugend|11–|12–|13–|14–|15–|16–|17\)/.test(target)) ages.add('youth')
+  if (/junge erwachsene|junge männer|junge frauen|18–|19–|20–|21–|22–|23–|24–|25–|26–|27\+/.test(target)) ages.add('youngAdults')
+  if (/erwachsene|männer|frauen|paare|priester|27\+|28\+/.test(target)) ages.add('adults')
+  if (/famil/.test(target)) ages.add('families')
+
+  const genders = new Set<GenderFilter>()
+  if (/jungen|männer|jugendliche m|junge männer|\bm\b/.test(target)) genders.add('male')
+  if (/mädchen|frauen|jugendliche w|junge frauen|\bw\b/.test(target)) genders.add('female')
+  if (genders.size === 0) {
+    genders.add('male')
+    genders.add('female')
+  }
+
+  return { ages, genders }
+}
+
+function distanceKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
+  const toRad = (value: number) => value * Math.PI / 180
+  const earthRadius = 6371
+  const dLat = toRad(b.lat - a.lat)
+  const dLng = toRad(b.lng - a.lng)
+  const lat1 = toRad(a.lat)
+  const lat2 = toRad(b.lat)
+  const sinLat = Math.sin(dLat / 2)
+  const sinLng = Math.sin(dLng / 2)
+  const h = sinLat * sinLat + Math.cos(lat1) * Math.cos(lat2) * sinLng * sinLng
+  return 2 * earthRadius * Math.asin(Math.sqrt(h))
+}
+
+function MapView({
+  events,
+  onOpenEvent,
+}: {
+  events: CalendarEvent[]
+  onOpenEvent: (eventId: string) => void
+}) {
+  const [selectedId, setSelectedId] = useState<string | null>(events[0]?.id ?? null)
+  const selected = events.find((event) => event.id === selectedId) ?? null
+
+  return (
+    <div className="fake-map-shell" aria-label="Schematische Kartenansicht der Veranstaltungen">
+      <div className="fake-map-grid" aria-hidden="true">
+        <span className="map-label map-label-north">Berlin</span>
+        <span className="map-label map-label-west">NRW</span>
+        <span className="map-label map-label-south">Bayern</span>
+        <span className="map-label map-label-east">Österreich</span>
+      </div>
+      {events.map((event) => {
+        const coords = getEventCoordinates(event)
+        if (!coords) return null
+        const left = Math.max(5, Math.min(95, ((coords.lng - 6) / 8.8) * 100))
+        const top = Math.max(6, Math.min(92, ((53.2 - coords.lat) / 6.1) * 100))
+        return (
+          <button
+            key={event.id}
+            type="button"
+            className={`map-pin${selectedId === event.id ? ' is-selected' : ''}`}
+            style={{ left: `${left}%`, top: `${top}%` }}
+            aria-label={event.title}
+            onClick={() => setSelectedId(event.id)}
+          >
+            <span />
+          </button>
+        )
+      })}
+      {selected && (
+        <button type="button" className="map-event-card" onClick={() => onOpenEvent(selected.id)}>
+          <span className="map-event-date">{formatDate(selected)}</span>
+          <strong>{selected.title}</strong>
+          <small>{selected.city} · {selected.targetGroups[0]}</small>
+          <span className="map-card-arrow">›</span>
+        </button>
+      )}
+      <div className="map-legend">Schematische Karte · PoC</div>
+    </div>
+  )
+}
+
 function App() {
   const [query, setQuery] = useState('')
-  const [category, setCategory] = useState('Alle')
-  const [country, setCountry] = useState('Alle')
-  const [onlyOpen, setOnlyOpen] = useState(false)
+  const [ageFilters, setAgeFilters] = useState<AgeFilter[]>([])
+  const [genderFilters, setGenderFilters] = useState<GenderFilter[]>([])
+  const [placeQuery, setPlaceQuery] = useState('')
+  const [radiusKm, setRadiusKm] = useState(50)
+  const [viewMode, setViewMode] = useState<ViewMode>('list')
+  const [filtersOpen, setFiltersOpen] = useState(false)
   const [expandedEventId, setExpandedEventId] = useState<string | null>(() => new URLSearchParams(window.location.search).get('event'))
   const [registrationEventId, setRegistrationEventId] = useState<string | null>(null)
 
@@ -711,24 +828,52 @@ function App() {
     return () => window.removeEventListener('popstate', onPopState)
   }, [])
 
-  const categories = useMemo(
-    () => ['Alle', ...Array.from(new Set(dummyEvents.map((event) => event.category))).sort()],
-    [],
-  )
+  const recognizedPlace = useMemo(() => {
+    const normalized = placeQuery.trim().toLocaleLowerCase('de-DE')
+    if (!normalized) return null
+    return placeCatalog.find((place) =>
+      place.name.toLocaleLowerCase('de-DE').includes(normalized)
+      || normalized.includes(place.name.toLocaleLowerCase('de-DE')),
+    ) ?? null
+  }, [placeQuery])
 
   const filteredEvents = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase('de-DE')
+    const normalizedPlace = placeQuery.trim().toLocaleLowerCase('de-DE')
+
     return dummyEvents.filter((event) => {
       const matchesQuery = !normalizedQuery || [event.title, event.city, event.country, event.shortDescription, ...event.targetGroups]
         .join(' ')
         .toLocaleLowerCase('de-DE')
         .includes(normalizedQuery)
-      return matchesQuery
-        && (category === 'Alle' || event.category === category)
-        && (country === 'Alle' || event.country === country)
-        && (!onlyOpen || event.registrationStatus === 'open')
+
+      const meta = getTargetMeta(event)
+      const matchesAge = ageFilters.length === 0 || ageFilters.some((filter) => meta.ages.has(filter))
+      const matchesGender = genderFilters.length === 0 || genderFilters.some((filter) => meta.genders.has(filter))
+
+      let matchesPlace = true
+      if (normalizedPlace) {
+        const eventCoords = getEventCoordinates(event)
+        if (recognizedPlace && eventCoords) {
+          matchesPlace = distanceKm(recognizedPlace, eventCoords) <= radiusKm
+        } else {
+          matchesPlace = [
+            event.city,
+            event.country,
+            event.venue?.city,
+            event.venue?.postalCode,
+            event.venue?.street,
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .toLocaleLowerCase('de-DE')
+            .includes(normalizedPlace)
+        }
+      }
+
+      return matchesQuery && matchesAge && matchesGender && matchesPlace
     })
-  }, [category, country, onlyOpen, query])
+  }, [ageFilters, genderFilters, placeQuery, query, radiusKm, recognizedPlace])
 
   const registrationEvent = registrationEventId
     ? dummyEvents.find((event) => event.id === registrationEventId) ?? null
@@ -743,16 +888,110 @@ function App() {
     window.history.pushState({}, '', url)
   }
 
+  const openEventFromMap = (eventId: string) => {
+    setViewMode('list')
+    setExpandedEventId(eventId)
+    const url = new URL(window.location.href)
+    url.searchParams.set('event', eventId)
+    window.history.pushState({}, '', url)
+    window.setTimeout(() => document.getElementById(`event-${eventId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 0)
+  }
+
+  const toggleAge = (id: AgeFilter) => {
+    setAgeFilters((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id])
+  }
+
+  const toggleGender = (id: GenderFilter) => {
+    setGenderFilters((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id])
+  }
+
   const resetFilters = () => {
     setQuery('')
-    setCategory('Alle')
-    setCountry('Alle')
-    setOnlyOpen(false)
+    setAgeFilters([])
+    setGenderFilters([])
+    setPlaceQuery('')
+    setRadiusKm(50)
   }
 
   if (registrationEvent) {
     return <RegistrationFlow event={registrationEvent} onClose={() => setRegistrationEventId(null)} />
   }
+
+  const activeFilterCount = ageFilters.length + genderFilters.length + (placeQuery ? 1 : 0)
+
+  const filterContent = (
+    <>
+      <div className="filter-heading">
+        <div><p className="eyebrow">FILTER</p><h2>Veranstaltungen finden</h2></div>
+        <button type="button" className="reset-button" onClick={resetFilters}>Zurücksetzen</button>
+      </div>
+
+      <div className="filter-section">
+        <span className="filter-label">Altersgruppen</span>
+        <div className="filter-chip-grid">
+          {ageFilterOptions.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              className={`filter-chip${ageFilters.includes(option.id) ? ' is-active' : ''}`}
+              onClick={() => toggleAge(option.id)}
+            >
+              <strong>{option.label}</strong>
+              {option.range && <small>{option.range} Jahre</small>}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="filter-section">
+        <span className="filter-label">Geschlecht <small>Mehrfachauswahl möglich</small></span>
+        <div className="gender-toggle">
+          <button type="button" className={genderFilters.includes('male') ? 'is-active' : ''} onClick={() => toggleGender('male')}>männlich</button>
+          <button type="button" className={genderFilters.includes('female') ? 'is-active' : ''} onClick={() => toggleGender('female')}>weiblich</button>
+        </div>
+      </div>
+
+      <div className="filter-section">
+        <span className="filter-label">Ort & Umkreis</span>
+        <label className="place-search">
+          <span aria-hidden="true">⌖</span>
+          <input
+            list="known-places"
+            value={placeQuery}
+            onChange={(event) => setPlaceQuery(event.target.value)}
+            placeholder="PLZ oder Ort"
+          />
+        </label>
+        <datalist id="known-places">
+          {placeCatalog.map((place) => <option key={place.name} value={place.name} />)}
+        </datalist>
+        <div className="radius-row">
+          <span>Umkreis</span>
+          <strong>{radiusKm} km</strong>
+        </div>
+        <input
+          className="radius-slider"
+          type="range"
+          min="5"
+          max="200"
+          step="5"
+          value={radiusKm}
+          onChange={(event) => setRadiusKm(Number(event.target.value))}
+          disabled={!placeQuery}
+        />
+        <div className="radius-presets">
+          {[5, 10, 25, 50, 100].map((value) => (
+            <button key={value} type="button" className={radiusKm === value ? 'is-active' : ''} onClick={() => setRadiusKm(value)} disabled={!placeQuery}>
+              {value}
+            </button>
+          ))}
+        </div>
+        {placeQuery && !recognizedPlace && (
+          <small className="filter-hint">Im PoC wird bei unbekannten Orten nach Ortsname oder PLZ gesucht. Für bekannte Demo-Orte funktioniert der Umkreis.</small>
+        )}
+      </div>
+    </>
+  )
 
   return (
     <div className="app-shell">
@@ -765,48 +1004,55 @@ function App() {
       </header>
 
       <main id="top">
-        <section className="hero">
+        <section className="hero mobile-first-hero">
           <p className="eyebrow">VERANSTALTUNGEN</p>
           <h1>Demnächst</h1>
-          <p>Veranstaltungen finden, Details direkt in der Liste öffnen und den kompletten Anmeldeweg testen.</p>
+          <p>Begegnung. Glaube. Mission.</p>
+          <label className="hero-search">
+            <span aria-hidden="true">⌕</span>
+            <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Veranstaltungen suchen …" />
+          </label>
+
+          <div className="quick-age-chips" aria-label="Schnellfilter Altersgruppe">
+            <button type="button" className={ageFilters.length === 0 ? 'is-active' : ''} onClick={() => setAgeFilters([])}>Alle</button>
+            {ageFilterOptions.slice(0, 4).map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                className={ageFilters.includes(option.id) ? 'is-active' : ''}
+                onClick={() => toggleAge(option.id)}
+              >
+                <span>{option.label}</span>
+                <small>{option.range}</small>
+              </button>
+            ))}
+          </div>
         </section>
 
-        <section className="calendar-layout" aria-label="Veranstaltungskalender">
-          <aside className="filter-panel">
-            <div className="filter-heading">
-              <div><p className="eyebrow">FILTER</p><h2>Finden</h2></div>
-              <button type="button" className="reset-button" onClick={resetFilters}>Zurücksetzen</button>
-            </div>
-            <label className="field">
-              <span>Suche</span>
-              <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Titel, Ort, Zielgruppe …" />
-            </label>
-            <label className="field">
-              <span>Kategorie</span>
-              <select value={category} onChange={(e) => setCategory(e.target.value)}>
-                {categories.map((item) => <option key={item}>{item}</option>)}
-              </select>
-            </label>
-            <label className="field">
-              <span>Land</span>
-              <select value={country} onChange={(e) => setCountry(e.target.value)}>
-                <option>Alle</option>
-                {countries.filter((item) => item !== 'Anderes Land').map((item) => <option key={item}>{item}</option>)}
-              </select>
-            </label>
-            <label className="check-field">
-              <input type="checkbox" checked={onlyOpen} onChange={(e) => setOnlyOpen(e.target.checked)} />
-              <span>Nur offene Anmeldung</span>
-            </label>
+        <section className="calendar-layout modern-calendar-layout" aria-label="Veranstaltungskalender">
+          <aside className="filter-panel desktop-filter-panel">
+            {filterContent}
           </aside>
 
           <section className="event-results">
+            <div className="mobile-toolbar">
+              <div className="view-switch" aria-label="Ansicht">
+                <button type="button" className={viewMode === 'list' ? 'is-active' : ''} onClick={() => setViewMode('list')}>Liste</button>
+                <button type="button" className={viewMode === 'map' ? 'is-active' : ''} onClick={() => setViewMode('map')}>Karte</button>
+              </div>
+              <button type="button" className="filter-open-button" onClick={() => setFiltersOpen(true)}>
+                Filter{activeFilterCount ? ` · ${activeFilterCount}` : ''}
+              </button>
+            </div>
+
             <div className="results-heading">
               <div><p className="eyebrow">ERGEBNISSE</p><h2>{filteredEvents.length} Veranstaltungen</h2></div>
               <p className="source-note">Demo-Daten · Stand 19.09.2026</p>
             </div>
 
-            {filteredEvents.length > 0 ? (
+            {viewMode === 'map' ? (
+              <MapView events={filteredEvents} onOpenEvent={openEventFromMap} />
+            ) : filteredEvents.length > 0 ? (
               <div className="event-list">
                 {filteredEvents.map((event) => (
                   <EventRow
@@ -821,13 +1067,25 @@ function App() {
             ) : (
               <div className="empty-state">
                 <h2>Keine Veranstaltung gefunden</h2>
-                <p>Ändere die Filter oder setze sie zurück.</p>
+                <p>Ändere die Filter oder erhöhe den Umkreis.</p>
                 <button type="button" className="primary-button" onClick={resetFilters}>Alle anzeigen</button>
               </div>
             )}
           </section>
         </section>
       </main>
+
+      {filtersOpen && (
+        <div className="filter-sheet-backdrop" role="presentation" onClick={() => setFiltersOpen(false)}>
+          <section className="filter-sheet" role="dialog" aria-modal="true" aria-label="Veranstaltungen filtern" onClick={(event) => event.stopPropagation()}>
+            <div className="sheet-handle" />
+            {filterContent}
+            <button type="button" className="primary-button sheet-apply-button" onClick={() => setFiltersOpen(false)}>
+              {filteredEvents.length} Ergebnisse anzeigen
+            </button>
+          </section>
+        </div>
+      )}
 
       <footer>
         <span>RC Kalender · Frontend PoC</span>
